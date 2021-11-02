@@ -8,13 +8,48 @@ for(i=0;i<updateBtns.length;i++){
 
         console.log('USER',user)
         if(user== 'AnonymousUser'){
-            console.log('User is not authenticated')
+            addCookieItem(productId,action)
         }
         else{
             UpdateUserOrder(productId,action)
         }
 
     })
+}
+
+function addCookieItem(productId,action ){
+    console.log('Not logged in..')
+    /* 
+    structure of cart cookie
+    cart={
+        1:{'quantity':4},
+        4:{'quantity':1},
+        6:{'quantity':2}
+    }
+    */
+   if (action=='add')
+   {
+       if(cart[productId]==undefined)
+       {
+           cart[productId]={'quantity':1}
+       }
+       else{
+           cart[productId]['quantity']+=1
+       }
+   }
+
+   if (action=='remove')
+   {
+       cart[productId]['quantity']-=1
+       if(cart[productId]['quantity']<=0)
+       {
+           console.log('Remove Item')
+           delete cart[productId]
+       }
+   }
+   console.log('Cart:',cart)
+   document.cookie='cart='+JSON.stringify(cart)+";domain=;path=/"
+   location.reload()
 }
 
 function UpdateUserOrder(productId,action){
