@@ -4,35 +4,24 @@ from .models import *
 import datetime
 from django.http import JsonResponse
 import json
-from . utils import cookieCart
+from . utils import cookieCart,cartData
 # Create your views here.
 
 
 def store(request):
-
-    if request.user.is_authenticated:
-        customer=request.user.customer
-        order,created=Order.objects.get_or_create(customer=customer,complete=False) #creating an object or quering one
-        items=order.orderitem_set.all() # it will get all the orderitems that have this order as parent
-        cartItems= order.get_cart_items
-    else:
-        cookieData=cookieCart(request)
-        cartItems=cookieData['cartItems']
+    data=cartData(request)
+    cartItems=data['cartItems']
+    
     products=Product.objects.all()
     context={'products':products,'cartItems':cartItems}
     return render(request,'store/store.html',context)
 
 def cart(request):
 
-    if request.user.is_authenticated:
-        customer=request.user.customer
-        order,created=Order.objects.get_or_create(customer=customer,complete=False) #creating an object or quering one
-        items=order.orderitem_set.all() # it will get all the orderitems that have this order as parent
-    else:
-       cookieData=cookieCart(request)
-       cartItems=cookieData['cartItems']
-       order=cookieData['order']
-       items=cookieData['items']
+    data=cartData(request)
+    cartItems=data['cartItems']
+    order=data['order']
+    items=data['items']
 
     context={'items':items, 'order':order,'cartItems':cartItems}
     return render(request,'store/cart.html',context)
@@ -42,16 +31,10 @@ from django.views.decorators.csrf import csrf_exempt
 @csrf_exempt
 def checkout(request):
 
-    if request.user.is_authenticated:
-        customer=request.user.customer
-        order,created=Order.objects.get_or_create(customer=customer,complete=False) #creating an object or quering one
-        items=order.orderitem_set.all() # it will get all the orderitems that have this order as parent
-        cartItems=order.get_cart_items
-    else:
-        cookieData=cookieCart(request)
-        cartItems=cookieData['cartItems']
-        order=cookieData['order']
-        items=cookieData['items']
+    data=cartData(request)
+    cartItems=data['cartItems']
+    order=data['order']
+    items=data['items']
     context={'items':items, 'order':order,'cartItems':cartItems}
     return render(request,'store/checkout.html',context)
 
