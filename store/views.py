@@ -4,13 +4,16 @@ from .models import *
 import datetime
 from django.http import JsonResponse
 import json
-from . utils import cookieCart,cartData
+from . utils import cookieCart,cartData,guestOrder
 # Create your views here.
 
 
 def store(request):
     data=cartData(request)
     cartItems=data['cartItems']
+    order=data['order']
+    items=data['items']
+
     
     products=Product.objects.all()
     context={'products':products,'cartItems':cartItems}
@@ -26,9 +29,6 @@ def cart(request):
     context={'items':items, 'order':order,'cartItems':cartItems}
     return render(request,'store/cart.html',context)
 
-from django.views.decorators.csrf import csrf_exempt
-
-@csrf_exempt
 def checkout(request):
 
     data=cartData(request)
@@ -60,7 +60,8 @@ def updateItem(request):
     if orderItem.quantity<=0:
         orderItem.delete()
     return JsonResponse('Item was added',safe=False)
-
+# from django.views.decorators.csrf import csrf_exempt
+#@csrf_exempt
 def processOrder(request):
     print('Data:',request.body)
     transaction_id=datetime.datetime.now().timestamp()
@@ -68,23 +69,27 @@ def processOrder(request):
     if request.user.is_authenticated:
         customer = request.user.customer
         order, created= Order.objects.get_or_create(customer=customer,complete=False)
-        total=float(data['form']['total'])
-        order.transaction_id=transaction_id
-
-        if total==float(order.get_cart_total):
-            order.complete=True
-        order.save()
         
-        if order.shipping==True:
-            ShippingAddress.objects.create(
-                customer=customer,
-                order=order,
-                address=data['shipping']['address'], 
-                city=data['shipping']['city'],
-                state=data['shipping']['state'],
-                zipcode=data['shipping']['zipcode'],
-            )
+        
+        
     else:
-        print('User is not logged in...')
+        customer,order=guestOrder(request,data)
+        
+    total=float(data['form']['total'])
+    order.transaction_id=transaction_id
+
+    if total==float(order.get_cart_total):
+        order.complete=True
+    order.save()
+
+    if order.shipping==True:
+        ShippingAddress.objects.create(
+            customer=customer,
+            order=order,
+            address=data['shipping']['address'], 
+            city=data['shipping']['city'],
+            state=data['shipping']['state'],
+            zipcode=data['shipping']['zipcode'],
+        )
     return JsonResponse('Payment Complete',safe=False)
  
